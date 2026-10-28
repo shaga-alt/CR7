@@ -4,6 +4,239 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PlayZone Football</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#081522;color:white;font-family:Arial,sans-serif}
+header{text-align:center;padding:22px;background:linear-gradient(120deg,#07523c,#172b50)}
+header h1{margin:0;font-size:36px}
+header span{color:#45f0a1}
+main{max-width:900px;margin:auto;padding:16px}
+nav{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}
+button{padding:11px;border:0;border-radius:8px;font-weight:bold;cursor:pointer}
+nav button{flex:1;background:#20364e;color:white}
+nav button.active,.green{background:#45f0a1;color:#062319}
+.panel{display:none;background:#12263c;padding:17px;border-radius:14px}
+.panel.active{display:block}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:15px 0}
+.card{background:#1d3650;padding:15px;border-radius:10px;text-align:center}
+.stat{font-size:24px;color:#ffd166;font-weight:bold;margin-top:8px}
+.muted{color:#b9c9d9;line-height:1.5}
+.pitch{height:260px;position:relative;overflow:hidden;margin:15px 0;background:repeating-linear-gradient(0deg,#21804b 0 32px,#2a9056 32px 64px);border:3px solid white}
+.pitch:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid white}
+.circle{position:absolute;width:85px;height:85px;border:2px solid white;border-radius:50%;left:calc(50% - 42px);top:calc(50% - 42px)}
+.goal{position:absolute;left:35%;right:35%;top:0;height:35px;border:4px solid white;border-top:0}
+.players{position:absolute;top:75px;width:100%;text-align:center;font-size:27px}
+.ball{position:absolute;left:calc(50% - 14px);top:185px;font-size:27px;transition:all .4s}
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0}
+.message{text-align:center;min-height:25px;font-weight:bold;margin:10px}
+.playerlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px}
+.player{background:#1d3650;padding:12px;border-radius:10px}
+.player button{margin-top:7px;width:100%}
+input{padding:11px;border-radius:7px;border:1px solid #52677b;max-width:100%}
+footer{text-align:center;color:#91a7bc;padding:20px}
+</style>
+</head>
+<body>
+
+<header>
+<h1>PLAY<span>ZONE</span> ⚽</h1>
+<p>Build your club. Sign stars. Win matches!</p>
+</header>
+
+<main>
+<p class="muted">A fan-made football manager game inspired by mobile football games. This is not the official Dream League Soccer game.</p>
+
+<nav>
+<button class="active" data-tab="club">🏠 Club</button>
+<button data-tab="match">⚽ Match</button>
+<button data-tab="transfers">🔄 Transfers</button>
+<button data-tab="squad">👥 Squad</button>
+</nav>
+
+<section class="panel active" id="club">
+<h2 id="clubHeading">My Football Club</h2>
+<input id="clubName" maxlength="22" placeholder="Enter your club name">
+<button class="green" id="saveClub">Save Name</button>
+
+<div class="cardgrid">
+<div class="card">🪙 Coins<div class="stat" id="coins">1000</div></div>
+<div class="card">🏆 Trophies<div class="stat" id="trophies">0</div></div>
+<div class="card">🎮 Matches<div class="stat" id="played">0</div></div>
+<div class="card">⭐ Rating<div class="stat" id="rating">60</div></div>
+</div>
+<h3>Club Objectives</h3>
+<p class="muted">• Win matches to earn coins.<br>• Buy better players in Transfers.<br>• Build a strong squad and win trophies.</p>
+</section>
+
+<section class="panel" id="match">
+<h2>⚽ Match Day</h2>
+<p class="muted">Choose your action during each turn. Play 5 turns to finish a match.</p>
+
+<div class="pitch">
+<div class="goal"></div><div class="circle"></div>
+<div class="players">🧤 🧍 🧍 🧍</div>
+<div class="ball" id="ball">⚽</div>
+</div>
+
+<div class="card" style="text-align:center">
+<div id="opponent">Your Club vs City FC</div>
+<div class="stat" id="score">0 - 0</div>
+<div id="turn">Turn 0 of 5</div>
+</div>
+<div class="message" id="matchMessage">Start the match!</div>
+<div class="controls">
+<button class="green" id="attack">⚡ Attack</button>
+<button id="defend" style="background:#304965;color:white">🛡️ Defend</button>
+<button id="newMatch" style="background:#ffd166">New Match</button>
+</div>
+</section>
+
+<section class="panel" id="transfers">
+<h2>🔄 Transfer Market</h2>
+<p class="muted">Sign new players using your coins. Each player can only be bought once.</p>
+<div class="playerlist" id="market"></div>
+</section>
+
+<section class="panel" id="squad">
+<h2>👥 My Squad</h2>
+<p class="muted">These are the players currently in your club.</p>
+<div class="playerlist" id="mySquad"></div>
+</section>
+</main>
+
+<footer>PlayZone Football • Fan-made browser game ⚽</footer>
+
+<script>
+const originalPlayers=[
+{name:"K. Mbappe",position:"ST",rating:91,price:800,emoji:"⚡"},
+{name:"E. Haaland",position:"ST",rating:90,price:750,emoji:"🎯"},
+{name:"V. Junior",position:"LW",rating:89,price:700,emoji:"🔥"},
+{name:"J. Bellingham",position:"CM",rating:88,price:650,emoji:"⭐"},
+{name:"K. De Bruyne",position:"CM",rating:90,price:700,emoji:"🎩"},
+{name:"V. van Dijk",position:"CB",rating:89,price:650,emoji:"🛡️"},
+{name:"A. Becker",position:"GK",rating:88,price:600,emoji:"🧤"},
+{name:"C. Ronaldo",position:"ST",rating:88,price:900,emoji:"🐐"}
+];
+
+let coins=1000,trophies=0,played=0;
+let squad=[
+{name:"Academy Striker",position:"ST",rating:60,emoji:"⚽"},
+{name:"Academy Midfielder",position:"CM",rating:60,emoji:"🎮"},
+{name:"Academy Defender",position:"CB",rating:60,emoji:"🛡️"},
+{name:"Academy Goalkeeper",position:"GK",rating:60,emoji:"🧤"}
+];
+let bought=[];
+let home=0,away=0,turns=0,finished=false;
+let club="My Football Club";
+
+const $=id=>document.getElementById(id);
+
+function update(){
+$("coins").textContent=coins;
+$("trophies").textContent=trophies;
+$("played").textContent=played;
+const rating=Math.round(squad.reduce((sum,p)=>sum+p.rating,0)/squad.length);
+$("rating").textContent=rating;
+$("clubHeading").textContent=club;
+renderMarket();renderSquad();
+}
+
+document.querySelectorAll("nav button").forEach(btn=>{
+btn.addEventListener("click",()=>{
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+btn.classList.add("active");
+$(btn.dataset.tab).classList.add("active");
+});
+});
+
+$("saveClub").onclick=()=>{
+const name=$("clubName").value.trim();
+if(name){club=name;$("clubHeading").textContent=club;}
+else alert("Enter a club name first!");
+};
+
+function renderMarket(){
+$("market").innerHTML="";
+originalPlayers.forEach((p,i)=>{
+const div=document.createElement("div");
+div.className="player";
+const owned=bought.includes(i);
+div.innerHTML=`<div style="font-size:27px">${p.emoji}</div>
+<strong>${p.name}</strong><br>
+${p.position} • Rating ${p.rating}<br>
+🪙 ${p.price}
+<br><button class="${owned?"":"green"}" ${owned||coins<p.price?"disabled":""}>${owned?"Signed":coins<p.price?"Not enough coins":"Sign Player"}</button>`;
+const button=div.querySelector("button");
+if(!owned&&coins>=p.price)button.onclick=()=>{
+coins-=p.price;bought.push(i);squad.push({...p});update();
+alert(p.name+" has joined your club!");
+};
+$("market").appendChild(div);
+});
+}
+
+function renderSquad(){
+$("mySquad").innerHTML="";
+squad.forEach(p=>{
+const div=document.createElement("div");
+div.className="player";
+div.innerHTML=`<div style="font-size:26px">${p.emoji||"⚽"}</div><strong>${p.name}</strong><br>${p.position} • Rating ${p.rating}`;
+$("mySquad").appendChild(div);
+});
+}
+
+function startMatch(){
+home=0;away=0;turns=0;finished=false;
+$("score").textContent="0 - 0";
+$("turn").textContent="Turn 0 of 5";
+$("opponent").textContent=club+" vs City FC";
+$("matchMessage").textContent="Kick-off! Choose Attack or Defend.";
+$("ball").style.left="calc(50% - 14px)";
+$("ball").style.top="185px";
+}
+function play(action){
+if(finished)return;
+turns++;
+const strength=squad.reduce((sum,p)=>sum+p.rating,0)/squad.length;
+const roll=Math.random();
+if(action==="attack"){
+if(roll<(0.22+strength/250)){home++;$("matchMessage").textContent="⚽ GOOOOAL! Great attack!";}
+else if(roll<0.65){$("matchMessage").textContent="The goalkeeper saves your shot!";}
+else $("matchMessage").textContent="The other team takes the ball.";
+$("ball").style.top="20px";
+$("ball").style.left=(20+Math.random()*60)+"%";
+}else{
+if(roll<0.24){away++;$("matchMessage").textContent="😮 The opponent scores!";}
+else if(roll<0.75){$("matchMessage").textContent="🛡️ Excellent defending!";}
+else $("matchMessage").textContent="You win back possession!";
+$("ball").style.top="110px";
+}
+$("score").textContent=home+" - "+away;
+$("turn").textContent="Turn "+turns+" of 5";
+if(turns>=5){
+finished=true;played++;
+let reward=100;
+if(home>away){trophies++;reward=250;$("matchMessage").textContent+=" 🏆 YOU WIN! +250 coins.";}
+else if(home===away){reward=150;$("matchMessage").textContent+=" 🤝 Draw! +150 coins.";}
+else $("matchMessage").textContent+=" Full time! +100 coins.";
+coins+=reward;
+update();
+}
+}
+$("attack").onclick=()=>play("attack");
+$("defend").onclick=()=>play("defend");
+$("newMatch").onclick=startMatch;
+
+update();startMatch();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlayZone Football</title>
 
 <style>
 *{box-sizing:border-box}
