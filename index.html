@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlayZone Football</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#071522;color:white}
+header{text-align:center;padding:25px 10px;background:linear-gradient(120deg,#063d35,#13264c)}
+header h1{font-size:clamp(30px,6vw,48px);margin:0}
+header h1 span{color:#42f59b}
+header p{color:#d4e6e1}
+main{max-width:950px;margin:auto;padding:18px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+button{cursor:pointer;border:0;border-radius:9px;padding:12px;font-weight:bold}
+.tab{background:#1a2d42;color:white;flex:1;min-width:130px}
+.tab.active,.play{background:#42f59b;color:#052219}
+.panel{display:none;background:#102238;border:1px solid #29425c;border-radius:16px;padding:18px}
+.panel.active{display:block}
+h2{margin-top:0}
+.info{color:#bdcddd;line-height:1.5}
+.arena{background:#07131e;padding:14px;border-radius:12px;text-align:center}
+.score{font-weight:bold;color:#ffd166;margin:12px}
+.goal{height:220px;max-width:440px;margin:15px auto;background:repeating-linear-gradient(90deg,#23874e 0 40px,#299655 40px 80px);border:6px solid white;border-bottom-width:9px;position:relative;cursor:pointer}
+.goal:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 24px,#ffffff25 25px 27px),repeating-linear-gradient(90deg,transparent 0 24px,#ffffff25 25px 27px);pointer-events:none}
+.keeper{position:absolute;bottom:10px;left:calc(50% - 24px);font-size:42px;z-index:2;transition:left .25s}
+.ball{position:absolute;bottom:-5px;left:calc(50% - 16px);font-size:30px;z-index:3;transition:all .35s}
+.message{min-height:25px;margin:12px;font-weight:bold}
+.play{margin:5px}
+.secondary{background:#29415a;color:white;margin:5px}
+.field{height:265px;max-width:500px;margin:15px auto;background:repeating-linear-gradient(0deg,#207746 0 35px,#27834e 35px 70px);border:3px solid white;position:relative;overflow:hidden}
+.freegoal{position:absolute;left:25%;right:25%;top:0;height:75px;border:5px solid white;background:repeating-linear-gradient(90deg,transparent 0 24px,#ffffff45 25px 27px)}
+.wall{position:absolute;top:100px;left:calc(50% - 55px);font-size:30px;z-index:2}
+.freeball{position:absolute;top:175px;left:calc(50% - 15px);font-size:30px;transition:all .4s;z-index:3}
+.controls{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:15px}
+input{width:110px;accent-color:#42f59b}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:18px 0}
+.team{background:#1a3048;color:white;border:2px solid transparent;padding:15px 5px}
+.team.selected{border-color:#42f59b;background:#174738}
+.team span{display:block;font-size:30px;margin-bottom:7px}
+.match{background:#07131e;padding:18px;border-radius:12px;text-align:center}
+.bigscore{font-size:28px;font-weight:bold;color:#ffd166;margin:15px}
+footer{text-align:center;color:#8fa4b9;padding:20px}
+</style>
+</head>
+
+<body>
+<header>
+<h1>PLAY<span>ZONE</span> ⚽</h1>
+<p>Play football. Score goals. Become a champion!</p>
+</header>
+
+<main>
+<div class="tabs">
+<button class="tab active" data-target="penalties">🥅 Penalties</button>
+<button class="tab" data-target="freekicks">🎯 Free Kicks</button>
+<button class="tab" data-target="worldcup">🏆 World Cup</button>
+</div>
+
+<!-- GAME 1: PENALTY SHOOTOUT -->
+<section id="penalties" class="panel active">
+<h2>🥅 Penalty Shootout</h2>
+<p class="info">Tap the left, middle or right side of the goal to shoot. Try to score 5 penalties!</p>
+<div class="arena">
+<div class="score">Goals: <span id="pGoals">0</span> | Shots: <span id="pShots">0</span>/5</div>
+<div class="goal" id="penGoal">
+<div class="keeper" id="keeper">🧤</div>
+<div class="ball" id="penBall">⚽</div>
+</div>
+<div id="pMessage" class="message">Choose where to shoot!</div>
+<button class="play" id="penReset">Restart Game</button>
+</div>
+</section>
+
+<!-- GAME 2: FREE KICK -->
+<section id="freekicks" class="panel">
+<h2>🎯 Free Kick Challenge</h2>
+<p class="info">Choose your aim and power. Shoot around the wall and score as many goals as possible out of 5 kicks.</p>
+<div class="arena">
+<div class="score">Goals: <span id="fGoals">0</span> | Kicks: <span id="fShots">0</span>/5</div>
+<div class="field" id="freeField">
+<div class="freegoal"></div>
+<div class="wall">🧍🧍🧍</div>
+<div class="freeball" id="freeBall">⚽</div>
+</div>
+<div class="controls">
+<label for="aim">Aim:</label>
+<input type="range" id="aim" min="0" max="100" value="50">
+<label for="power">Power:</label>
+<input type="range" id="power" min="1" max="100" value="65">
+</div>
+<div id="fMessage" class="message">Line up your shot!</div>
+<button class="play" id="shootFree">Shoot!</button>
+<button class="secondary" id="freeReset">Restart Game</button>
+</div>
+</section>
+
+<!-- GAME 3: WORLD CUP -->
+<section id="worldcup" class="panel">
+<h2>🏆 Football World Cup</h2>
+<p class="info">Choose your national team, then play a match. Your opponent is selected randomly. Pick your match action and try to win!</p>
+<div class="teams" id="teamList">
+<button class="team" data-team="Rwanda" data-flag="🇷🇼"><span>🇷🇼</span>Rwanda</button>
+<button class="team" data-team="Brazil" data-flag="🇧🇷"><span>🇧🇷</span>Brazil</button>
+<button class="team" data-team="Argentina" data-flag="🇦🇷"><span>🇦🇷</span>Argentina</button>
+<button class="team" data-team="France" data-flag="🇫🇷"><span>🇫🇷</span>France</button>
+<button class="team" data-team="England" data-flag="🏴"><span>🏴</span>England</button>
+<button class="team" data-team="Portugal" data-flag="🇵🇹"><span>🇵🇹</span>Portugal</button>
+<button class="team" data-team="Spain" data-flag="🇪🇸"><span>🇪🇸</span>Spain</button>
+<button class="team" data-team="Germany" data-flag="🇩🇪"><span>🇩🇪</span>Germany</button>
+</div>
+<div class="match">
+<div id="matchStatus">Choose your team to begin!</div>
+<div class="bigscore" id="matchScore">0 - 0</div>
+<div id="matchComment">Ready for kick-off?</div>
+<button class="play" id="attackBtn">⚽ Attack</button>
+<button class="secondary" id="defendBtn">🛡️ Defend</button>
+<button class="secondary" id="newMatch">New Match</button>
+</div>
+</section>
+</main>
+
+<footer>© 2026 PlayZone Football | Made for football fans ⚽</footer>
+
+<script>
+// GAME TABS
+document.querySelectorAll(".tab").forEach(button=>{
+  button.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    button.classList.add("active");
+    document.getElementById(button.dataset.target).classList.add("active");
+  });
+});
+
+// GAME 1: PENALTY SHOOTOUT
+let pGoals=0,pShots=0,penBusy=false;
+const penGoal=document.getElementById("penGoal");
+const penBall=document.getElementById("penBall");
+const keeper=document.getElementById("keeper");
+
+penGoal.addEventListener("click",event=>{
+  if(pShots>=5||penBusy)return;
+  penBusy=true;
+  const rect=penGoal.getBoundingClientRect();
+  const x=event.clientX-rect.left;
+  const direction=x<rect.width/3?"left":x>rect.width*2/3?"right":"middle";
+  const keeperDirection=["left","middle","right"][Math.floor(Math.random()*3)];
+  keeper.style.left=keeperDirection==="left"?"15%":keeperDirection==="right"?"80%":"calc(50% - 24px)";
+  penBall.style.left=Math.max(5,Math.min(rect.width-35,x-15))+"px";
+  penBall.style.bottom="145px";
+  pShots++;
+  const saved=direction===keeperDirection;
+  if(!saved)pGoals++;
+  document.getElementById("pGoals").textContent=pGoals;
+  document.getElementById("pShots").textContent=pShots;
+  document.getElementById("pMessage").textContent=saved?"🧤 Saved by the goalkeeper!": "⚽ GOAL! Great shot!";
+  setTimeout(()=>{
+    penBall.style.left="calc(50% - 16px)";
+    penBall.style.bottom="-5px";
+    if(pShots>=5)document.getElementById("pMessage").textContent=`Full time! You scored ${pGoals} out of 5 penalties.`;
+    penBusy=false;
+  },650);
+});
+
+document.getElementById("penReset").addEventListener("click",()=>{
+  pGoals=0;pShots=0;penBusy=false;
+  keeper.style.left="calc(50% - 24px)";
+  penBall.style.left="calc(50% - 16px)";
+  penBall.style.bottom="-5px";
+  document.getElementById("pGoals").textContent="0";
+  document.getElementById("pShots").textContent="0";
+  document.getElementById("pMessage").textContent="Choose where to shoot!";
+});
+
+// GAME 2: FREE KICK CHALLENGE
+let fGoals=0,fShots=0,freeBusy=false;
+document.getElementById("shootFree").addEventListener("click",()=>{
+  if(fShots>=5||freeBusy)return;
+  freeBusy=true;
+  const aim=Number(document.getElementById("aim").value);
+  const power=Number(document.getElementById("power").value);
+  const ball=document.getElementById("freeBall");
+  const field=document.getElementById("freeField");
+  const offset=(aim-50)*3.3;
+  const random=Math.random();
+  const onTarget=aim>18&&aim<82&&power>25&&power<96;
+  const scored=onTarget&&random<(0.25+Math.min(power,80)/150)&&!(aim>43&&aim<57&&Math.random()<0.3);
+  ball.style.left=`calc(50% + ${offset}px)`;
+  ball.style.top=(power>75?"20px":"55px");
+  fShots++;
+  if(scored)fGoals++;
+  document.getElementById("fGoals").textContent=fGoals;
+  document.getElementById("fShots").textContent=fShots;
+  document.getElementById("fMessage").textContent=scored?"⚽ WHAT A FREE KICK! GOAL!":(onTarget?"🧤 The goalkeeper saves it!":"❌ Wide of the goal!");
+  setTimeout(()=>{
+    ball.style.left="calc(50% - 15px)";
+    ball.style.top="175px";
+    if(fShots>=5)document.getElementById("fMessage").textContent=`Challenge over! You scored ${fGoals} out of 5 free kicks.`;
+    freeBusy=false;
+  },650);
+});
+document.getElementById("freeReset").addEventListener("click",()=>{
+  fGoals=0;fShots=0;freeBusy=false;
+  document.getElementById("fGoals").textContent="0";
+  document.getElementById("fShots").textContent="0";
+  document.getElementById("fMessage").textContent="Line up your shot!";
+  document.getElementById("freeBall").style.left="calc(50% - 15px)";
+  document.getElementById("freeBall").style.top="175px";
+});
+
+// GAME 3: WORLD CUP
+const teams=[...document.querySelectorAll(".team")];
+let myTeam=null,myFlag="",opponent=null,homeScore=0,awayScore=0,turns=0,matchOver=false;
+const opponents=["Rwanda","Brazil","Argentina","France","England","Portugal","Spain","Germany"];
+
+teams.forEach(button=>{
+  button.addEventListener("click",()=>{
+    teams.forEach(t=>t.classList.remove("selected"));
+    button.classList.add("selected");
+    myTeam=button.dataset.team;
+    myFlag=button.dataset.flag;
+    startMatch();
+  });
+});
+
+function startMatch(){
+  if(!myTeam){
+    document.getElementById("matchStatus").textContent="Choose your team first!";
+    return;
+  }
+  const choices=opponents.filter(t=>t!==myTeam);
+  opponent=choices[Math.floor(Math.random()*choices.length)];
+  homeScore=0;awayScore=0;turns=0;matchOver=false;
+  document.getElementById("matchStatus").textContent=`${myFlag} ${myTeam} vs ${opponent}`;
+  document.getElementById("matchScore").textContent="0 - 0";
+  document.getElementById("matchComment").textContent="Kick-off! Choose Attack or Defend.";
+}
+function playTurn(action){
+  if(!myTeam){
+    document.getElementById("matchComment").textContent="Select your team first!";
+    return;
+  }
+  if(matchOver){
+    document.getElementById("matchComment").textContent="The match has ended. Start a New Match!";
+    return;
+  }
+  turns++;
+  const roll=Math.random();
+  if(action==="attack"){
+    if(roll<0.38){homeScore++;document.getElementById("matchComment").textContent="⚽ GOAL! Brilliant attack!";}
+    else if(roll<0.68){document.getElementById("matchComment").textContent="🧤 The keeper saves your shot!";}
+    else{document.getElementById("matchComment").textContent="The opponent wins the ball.";}
+  }else{
+    if(roll<0.35){awayScore++;document.getElementById("matchComment").textContent="😮 The opponent scores!";}
+    else if(roll<0.72){document.getElementById("matchComment").textContent="🛡️ Great defending!";}
+    else{document.getElementById("matchComment").textContent="You win the ball back!";}
+  }
+  document.getElementById("matchScore").textContent=`${homeScore} - ${awayScore}`;
+  if(turns>=10){
+    matchOver=true;
+    let result=homeScore>awayScore?"🏆 YOU WIN!":homeScore<awayScore?"Full time — your opponent wins.":"🤝 It's a draw!";
+    document.getElementById("matchComment").textContent=`${result} Final score: ${homeScore} - ${awayScore}.`;
+  }
+}
+document.getElementById("attackBtn").addEventListener("click",()=>playTurn("attack"));
+document.getElementById("defendBtn").addEventListener("click",()=>playTurn("defend"));
+document.getElementById("newMatch").addEventListener("click",startMatch);
+</script>
+</body>
+</html>
